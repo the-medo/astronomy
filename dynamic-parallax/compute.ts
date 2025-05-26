@@ -1,27 +1,27 @@
 // noinspection SpellCheckingInspection
 
-/**
- * Konstanty
- */
+/** Konstanty - SLNKO */
+const ABS_MAG_SUN = 4.83; // absolutna magnitude
+const LUMINOSITY_SUN = 3.83e26; // luminosita 3.83 x 10^26 [W]
 
-// SLNKO:
-const ABS_MAG_SUN = 4.83                             // absolutna magnitude
-const LUMINOSITY_SUN = 3.83e26;                      // luminosita 3.83 x 10^26 [W]
-
-
-// Zo zadania:
+/** Zo zadania */
 const m1 = 3.9; // relativna magnituda 1
 const m2 = 5.3; // relativna magnituda 2
 const A = 4.5; // velka poloosa (v uhlovych sekundach)
 const B = 3.4; // mala poloosa (v uhlovych sekundach)
 const t = 11; // dlzka pozorovania (v rokoch)
 
-const h = Math.sqrt(A ** 2 - B ** 2); // = 2.95"
-const S = Math.PI * A * B; // uhlove sekundy stvorcove
-const eps = A * B * (Math.acos(h/A) - (h/A ** 2) * Math.sqrt(A ** 2 - h ** 2)); // uhlove sekundy stvorcove
-const T = (t * S) / eps; // perioda (v rokoch)
-
+const computeExcentricity = (a: number, b: number) => Math.sqrt(a ** 2 - b ** 2);
+const computeEllipsisArea = (a: number, b: number) => Math.PI * a * b;
+const computePartialEllipsisArea = (a: number, b: number, h: number) =>
+  a * b * (Math.acos(h / a) - (h / a ** 2) * Math.sqrt(a ** 2 - h ** 2));
+const computePeriod = (t: number, S: number, eps: number) => (t * S) / eps; // perioda (v rokoch)
 const convertAuToParsecs = (au: number) => au / 206265;
+
+const h = computeExcentricity(A, B); // = 2.95"
+const S = computeEllipsisArea(A, B);
+const eps = computePartialEllipsisArea(A, B, h);
+const T = computePeriod(t, S, eps);
 
 /** Krok 1:
  * Z periody T a predpokladanej hmotnosti vypocitame velku poloosu a
@@ -33,7 +33,7 @@ const convertAuToParsecs = (au: number) => au / 206265;
  * @param M2 predpokladana hmotnost druhej hviezdy (v hmotnosti slnka Ms)
  * @return number => velka poloosa (v AU)
  */
-const velkaPoloosa = (T: number, M1: number, M2: number) => ((M1 + M2) * (T ** 2)) ** (1/3);
+const velkaPoloosa = (T: number, M1: number, M2: number) => ((M1 + M2) * T ** 2) ** (1 / 3);
 
 /** Krok 2:
  * Z vypocitanej velikosti a pozorovanej uhlovej velkosti a vypocitame odhad vzdialenosti od Zeme
@@ -45,9 +45,9 @@ const velkaPoloosa = (T: number, M1: number, M2: number) => ((M1 + M2) * (T ** 2
  * @return d = vzdialenost v (AU)
  */
 const distance = (a: number, uhol: number) => {
-  const x = 2 * Math.PI / (360 * 3600); // prepocet uhlovych sekund na radiany = 1/205265
+  const x = (2 * Math.PI) / (360 * 3600); // prepocet uhlovych sekund na radiany = 1/205265
   return a / (uhol * x);
-}
+};
 
 /** Krok 3a:
  * Vypocet absolutnej magnitudy
@@ -72,7 +72,7 @@ const computeAbsoluteMagnitude = (m: number, d: number) => m + 5 - 5 * Math.log1
  * @param M = absolutna magnituda
  * @return number = vysledny ziarivy vykon [W]
  */
-const computeLuminosity = (M: number) => 10 ** ((M - ABS_MAG_SUN)/-2.5)*LUMINOSITY_SUN;
+const computeLuminosity = (M: number) => 10 ** ((M - ABS_MAG_SUN) / -2.5) * LUMINOSITY_SUN;
 
 /** Krok 4:
  * Vypocet hmotnosti:
@@ -88,7 +88,7 @@ const computeLuminosity = (M: number) => 10 ** ((M - ABS_MAG_SUN)/-2.5)*LUMINOSI
  * @param L = luminosita hviezdy
  * @return number = vysledna hmotnost v hmotnostiach slnka
  */
-const computeWeight = (L: number) => (L / LUMINOSITY_SUN) ** (1/3.5)
+const computeWeight = (L: number) => (L / LUMINOSITY_SUN) ** (1 / 3.5);
 
 /**
  *
@@ -98,7 +98,13 @@ const computeWeight = (L: number) => (L / LUMINOSITY_SUN) ** (1/3.5)
  * @param ASSUMED_M2 = [Ms]
  * @param wantedAccuracy = [%]
  */
-const iterate = (i: number, T: number, ASSUMED_M1: number, ASSUMED_M2: number, wantedAccuracy = 1) => {
+const iterate = (
+  i: number,
+  T: number,
+  ASSUMED_M1: number,
+  ASSUMED_M2: number,
+  wantedAccuracy = 1,
+) => {
   const a = velkaPoloosa(T, ASSUMED_M1, ASSUMED_M2);
   const d = convertAuToParsecs(distance(a, A)); // v parsecoch
 
@@ -112,22 +118,22 @@ const iterate = (i: number, T: number, ASSUMED_M1: number, ASSUMED_M2: number, w
   const M2 = computeWeight(L2);
 
   /* rozdiel v percentach */
-  const diff = ((ASSUMED_M1 + ASSUMED_M2) - (M1 + M2)) / (ASSUMED_M1 + ASSUMED_M2) * 100;
+  const diff = ((ASSUMED_M1 + ASSUMED_M2 - (M1 + M2)) / (ASSUMED_M1 + ASSUMED_M2)) * 100;
 
-  console.log({iteracia: i, a, d, MAG1, MAG2, L1, L2, M1, M2, diff});
+  console.log({ iteracia: i, a, d, MAG1, MAG2, L1, L2, M1, M2, diff });
   if (diff < wantedAccuracy) {
-    console.log(`Required accuracy ${wantedAccuracy}% reached after ${i} iterations!`)
-    return {MAG1, MAG2, L1, L2, M1, M2, d};
+    console.log(`Required accuracy ${wantedAccuracy}% reached after ${i} iterations!`);
+    return { MAG1, MAG2, L1, L2, M1, M2, d };
   }
   return iterate(i + 1, T, M1, M2);
-}
+};
 
 const run = () => {
-  const {MAG1, MAG2, L1, L2, M1, M2, d} = iterate(1, T, 1, 1);
-  console.log("T: ", T.toFixed(3), "yr");
-  console.log("d: ", d.toFixed(3), "pc");
-  console.log("STAR 1: Abs. Magnitude: ", MAG1.toFixed(2), " | Weight: ", M1.toFixed(3), "suns");
-  console.log("STAR 2: Abs. Magnitude: ", MAG2.toFixed(2), " | Weight: ", M2.toFixed(3), "suns");
-}
+  const { MAG1, MAG2, L1, L2, M1, M2, d } = iterate(1, T, 1, 1);
+  console.log('T: ', T.toFixed(3), 'yr');
+  console.log('d: ', d.toFixed(3), 'pc');
+  console.log('STAR 1: Abs. Magnitude: ', MAG1.toFixed(2), ' | Weight: ', M1.toFixed(3), 'suns');
+  console.log('STAR 2: Abs. Magnitude: ', MAG2.toFixed(2), ' | Weight: ', M2.toFixed(3), 'suns');
+};
 
 run();
