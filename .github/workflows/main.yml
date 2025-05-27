@@ -1,0 +1,35 @@
+name: Build and Deploy
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main  # Set a branch to trigger deployment
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v2.3.4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2.5.0
+        with:
+          node-version: 16
+
+      - name: Install pnpm globally
+        run: npm install -g pnpm
+
+      - name: Install dependencies and build 🔧
+        run: |
+          cd dynamic-parallax
+          pnpm install
+          pnpm run build
+
+      - name: Deploy 🚀
+        uses: JamesIves/github-pages-deploy-action@4.1.5
+        with:
+          branch: gh-pages
+          folder: dynamic-parallax/build
+          token: ${{ secrets.GITHUB_TOKEN }}

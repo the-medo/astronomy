@@ -1,6 +1,7 @@
 {
   "name": "astronomy",
   "version": "1.0.0",
+  "homepage": "https://the-medo.github.io/astronomy",
   "description": "",
   "main": "dist/index.js",
   "scripts": {
