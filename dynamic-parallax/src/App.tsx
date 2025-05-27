@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button, Card, Col, Form, Row, Table, Tabs, Typography, Alert } from 'antd';
 import {
   runComputation,
@@ -46,6 +46,41 @@ const App: React.FC = () => {
     wantedAccuracy: 1,
   };
 
+  // Function to read parameters from URL
+  const getParamsFromUrl = (): Partial<FormValues> => {
+    const params = new URLSearchParams(window.location.search);
+    const urlParams: Partial<FormValues> = {};
+
+    // Read each parameter from URL
+    if (params.has('m1')) urlParams.m1 = Number(params.get('m1'));
+    if (params.has('m2')) urlParams.m2 = Number(params.get('m2'));
+    if (params.has('A')) urlParams.A = Number(params.get('A'));
+    if (params.has('B')) urlParams.B = Number(params.get('B'));
+    if (params.has('t')) urlParams.t = Number(params.get('t'));
+    if (params.has('wantedAccuracy'))
+      urlParams.wantedAccuracy = Number(params.get('wantedAccuracy'));
+
+    return urlParams;
+  };
+
+  // Function to update URL with current parameters
+  const updateUrlParams = (values: FormValues) => {
+    const params = new URLSearchParams();
+
+    // Only add parameters to URL if they differ from default values
+    if (values.m1 !== defaultValues.m1) params.set('m1', values.m1.toString());
+    if (values.m2 !== defaultValues.m2) params.set('m2', values.m2.toString());
+    if (values.A !== defaultValues.A) params.set('A', values.A.toString());
+    if (values.B !== defaultValues.B) params.set('B', values.B.toString());
+    if (values.t !== defaultValues.t) params.set('t', values.t.toString());
+    if (values.wantedAccuracy !== defaultValues.wantedAccuracy)
+      params.set('wantedAccuracy', values.wantedAccuracy.toString());
+
+    // Update URL without reloading the page
+    const newUrl = `${window.location.pathname}?${params.toString()}`;
+    window.history.pushState({ path: newUrl }, '', newUrl);
+  };
+
   // Update computed values when form values change
   const updateComputedValues = (values: FormValues) => {
     const { A, B, t } = values;
@@ -64,6 +99,9 @@ const App: React.FC = () => {
     if (pageState === 'computed' && iterationResults.length > 0) {
       setPageState('outdated');
     }
+
+    // Update URL parameters
+    updateUrlParams(values);
   };
 
   // Handle form submission
@@ -91,6 +129,9 @@ const App: React.FC = () => {
     setAValue(defaultValues.A);
     setBValue(defaultValues.B);
 
+    // Update URL parameters to default values
+    updateUrlParams(defaultValues);
+
     // Set page state to outdated if there are already computed results
     if (iterationResults.length > 0) {
       setPageState('outdated');
@@ -98,13 +139,23 @@ const App: React.FC = () => {
   };
 
   // Initialize form with default values and compute initial values
-  React.useEffect(() => {
-    form.setFieldsValue(defaultValues);
-    updateComputedValues(defaultValues);
+  useEffect(() => {
+    // Get parameters from URL
+    const urlParams = getParamsFromUrl();
+
+    // Merge URL parameters with default values
+    const initialValues: FormValues = {
+      ...defaultValues,
+      ...urlParams,
+    };
+
+    // Set form values
+    form.setFieldsValue(initialValues);
+    updateComputedValues(initialValues);
 
     // Initialize A and B values
-    setAValue(defaultValues.A);
-    setBValue(defaultValues.B);
+    setAValue(initialValues.A);
+    setBValue(initialValues.B);
 
     // Automatically trigger computation after page load
     const timer = setTimeout(() => {
@@ -222,9 +273,9 @@ const App: React.FC = () => {
                 style={{ marginBottom: 16 }}
               >
                 <FormSliderWithInput
-                  min={0.1}
+                  min={0.001}
                   max={5}
-                  step={0.1}
+                  step={0.001}
                   formatter={value => `${value}%`}
                   marks={{ 0.1: '0.1%', 5: '5%' }}
                 />
@@ -262,7 +313,7 @@ const App: React.FC = () => {
                 <Button type="primary" htmlType="submit" style={{ marginRight: '8px' }}>
                   Compute
                 </Button>
-                <Button onClick={resetForm}>Reset</Button>
+                <Button onClick={resetForm}>Reset to assignment defaults</Button>
               </Form.Item>
             </Form>
           </Card>
