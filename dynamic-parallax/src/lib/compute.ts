@@ -106,7 +106,8 @@ export const runComputation = (
     let ASSUMED_M2 = 1;
     let done = false;
 
-    while (!done && currentIteration <= 100) { // Limit to prevent infinite loops
+    while (!done && currentIteration <= 100) {
+      // Limit to prevent infinite loops
       const a = velkaPoloosa(T, ASSUMED_M1, ASSUMED_M2);
       const d = convertAuToParsecs(distance(a, A)); // v parsecoch
 
@@ -120,9 +121,21 @@ export const runComputation = (
       const M2 = computeWeight(L2);
 
       /* rozdiel v percentach */
-      const diff = ((ASSUMED_M1 + ASSUMED_M2 - (M1 + M2)) / (ASSUMED_M1 + ASSUMED_M2)) * 100;
+      const diff =
+        (Math.abs(ASSUMED_M1 + ASSUMED_M2 - (M1 + M2)) / (ASSUMED_M1 + ASSUMED_M2)) * 100;
 
-      const iterationResult = { iteracia: currentIteration, a, d, MAG1, MAG2, L1, L2, M1, M2, diff };
+      const iterationResult = {
+        iteracia: currentIteration,
+        a,
+        d,
+        MAG1,
+        MAG2,
+        L1,
+        L2,
+        M1,
+        M2,
+        diff,
+      };
       results.push(iterationResult);
 
       if (diff < wantedAccuracy) {
